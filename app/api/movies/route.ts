@@ -46,6 +46,21 @@ const MAX_RESULTS      = 20
 const MIN_RESULTS      = 1
 const MAX_QUERY_LENGTH = 200
 
+const MOVIE_SUBREDDITS = [
+  'bollywood','BollywoodMemes','moviesuggestions','india','movies',
+  'underratedmovies','HorrorMovies','TrueFilm','Letterboxd','horror',
+  'boxoffice','IndianCinema','TeenIndia','criterion','okbuddycinephile',
+  'wehatemovies','moviescirclejerk','boutiquebluray','blankies',
+]
+
+const TV_SUBREDDITS = [
+  'televisionsuggestions','tvshow','community','television','TvShows',
+  'sitcoms','tvPlus','Netflixwatch','hbo','BritishTV',
+  'bestofnetflix','indiasocial','IndianOTTbestof','IndianTellyTalk','funnyIndia',
+  'IndianTVshows','netflixindia','AskIndia',
+]
+
+const ALL_SUBREDDITS = [...MOVIE_SUBREDDITS, ...TV_SUBREDDITS]
 
 // ── OMDB ──────────────────────────────────────────────────────────────────────
 async function fetchOMDB(title: string, year?: string) {
@@ -248,8 +263,13 @@ export async function POST(req: NextRequest) {
       const searchQuery = `${cleanQuery} ${type === 'show' ? 'web series OTT' : type === 'movie' ? 'film review' : 'watch recommend'}`
       console.log('[SCRAPER] Search query sent:', searchQuery)
 
+      const subreddits = type === 'movie' ? MOVIE_SUBREDDITS : type === 'show' ? TV_SUBREDDITS : ALL_SUBREDDITS
+
       const apifyInput = {
-        searches: [searchQuery],
+        startUrls: subreddits.map(sub => ({
+          url: `https://www.reddit.com/r/${sub}/search/?q=${encodeURIComponent(cleanQuery)}&sort=top&t=${era === 'recent' ? 'month' : era === 'modern' ? 'year' : 'all'}`
+        })),
+        searches: [cleanQuery],
         maxItems: 30,
         maxPostCount: 30,
         maxComments: 10,
@@ -257,7 +277,6 @@ export async function POST(req: NextRequest) {
         searchComments: true,
         searchCommunities: false,
         searchUsers: false,
-        sort: 'relevance',
         proxy: { useApifyProxy: true, apifyProxyGroups: ['RESIDENTIAL'] }
       }
 
