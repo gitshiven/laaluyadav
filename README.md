@@ -1,6 +1,7 @@
 # 🧔 Laaluyadav — The Movie Oracle
 
-Desi uncle certified movie recommendations. Top 5 world cinema picks, powered by community intelligence, IMDB, and Popcornmeter.
+Desi uncle certified movie recommendations. One stop for your "perfect movie/tv show recommendation" without wasting your time on IMDB and reddit. 
+Open source for my Indian family. Trust your uncle on this. 
 
 ---
 
