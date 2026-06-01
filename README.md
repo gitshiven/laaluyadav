@@ -1,6 +1,5 @@
-# 🧔 Laaluyadav — The Movie Oracle
+# 🧔 Laaluyadav — Unemployable Unc
 
-> *"Seedha baat, no bakwaas."*
 
 Desi uncle certified movie & TV recommendations. Community sentiment. No filmy nonsense.
 
