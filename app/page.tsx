@@ -43,7 +43,14 @@ export default function Home() {
   // Auto-search if URL has query params
   useEffect(() => {
     const q = searchParams.get('q')
-    if (q) handleSearch(q, searchParams.get('type') as Tab || 'both', searchParams.get('era') || 'all', parseInt(searchParams.get('count') || '5'))
+    if (!q) return
+    const c = parseInt(searchParams.get('count') || '5')
+    const t = searchParams.get('type') as Tab || 'both'
+    const e = searchParams.get('era') || 'all'
+    setQuery(q)
+    setTab(t)
+    setEra(e)
+    setCount(c)
   }, [])
 
   useEffect(() => {
