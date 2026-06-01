@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Laaluyadav — Movie Oracle",
+  "version": "1.0.0",
+  "description": "Desi uncle certified movie picks. Ask for any mood and get top 5 world cinema picks instantly.",
+  "permissions": ["storage"],
+  "host_permissions": ["https://laaluyadav.vercel.app/*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Laaluyadav",
+    "default_icon": {
+      "16":  "icons/icon16.png",
+      "48":  "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16":  "icons/icon16.png",
+    "48":  "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Laaluyadav</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+  :root { --red:#E8001D; --yellow:#FFE600; --cream:#F5F0E8; --ink:#0D0D0D; }
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  body { width:400px; min-height:200px; max-height:600px; overflow-y:auto; background:var(--cream); font-family:'DM Sans',sans-serif; color:var(--ink); }
+
+  .header { background:var(--ink); }
+  .tape { background:var(--red); height:5px; }
+  .header-inner { display:flex; align-items:center; justify-content:space-between; padding:0.8rem 1rem 0.6rem; }
+  .logo { font-family:'Bebas Neue',sans-serif; font-size:2rem; color:var(--yellow); line-height:1; text-shadow:2px 2px 0 var(--red); }
+  .badge { background:var(--yellow); color:var(--ink); font-family:'Bebas Neue',sans-serif; font-size:0.6rem; padding:0.2rem 0.5rem; transform:rotate(-2deg); letter-spacing:0.1em; }
+
+  .body { padding:1rem; }
+
+  .field { display:flex; flex-direction:column; gap:0.3rem; margin-bottom:0.8rem; }
+  .field label { font-family:'Space Mono',monospace; font-size:0.55rem; color:#888; letter-spacing:0.15em; text-transform:uppercase; }
+  .field input, .field select {
+    background:transparent; border:2px solid #ccc; color:var(--ink);
+    font-family:'Space Mono',monospace; font-size:0.75rem; padding:0.5rem 0.7rem;
+    outline:none; width:100%; -webkit-appearance:none;
+  }
+  .field input:focus, .field select:focus { border-color:var(--red); }
+  .field input::placeholder { color:#aaa; }
+
+  .btn {
+    width:100%; background:var(--red); border:2px solid var(--red); color:#fff;
+    font-family:'Bebas Neue',sans-serif; font-size:1.1rem; letter-spacing:0.1em;
+    padding:0.5rem; cursor:pointer; transition:all 0.15s;
+  }
+  .btn:hover { background:var(--yellow); border-color:var(--yellow); color:var(--ink); }
+  .btn:disabled { opacity:0.5; cursor:not-allowed; }
+
+  .loading { text-align:center; padding:1.5rem 1rem; display:none; }
+  .loading.visible { display:block; }
+  .load-title { font-family:'Bebas Neue',sans-serif; font-size:1.5rem; color:var(--ink); animation:flicker 1.2s infinite; }
+  .load-msg { font-family:'Space Mono',monospace; font-size:0.6rem; color:var(--red); letter-spacing:0.15em; margin-top:0.5rem; animation:pulse 0.8s infinite; }
+  .progress-wrap { background:#ddd; height:3px; margin-top:1rem; }
+  .progress-bar { background:var(--yellow); height:100%; width:0; transition:width 0.5s ease; }
+
+  .error { display:none; background:var(--red); padding:0.8rem; margin-bottom:0.8rem; }
+  .error.visible { display:block; }
+  .error p { font-family:'Space Mono',monospace; font-size:0.65rem; color:#fff; line-height:1.5; }
+
+  .laalu { display:none; background:var(--yellow); border-left:4px solid var(--ink); padding:0.7rem; margin-bottom:0.8rem; }
+  .laalu.visible { display:block; }
+  .laalu-text { font-family:'Space Mono',monospace; font-size:0.65rem; color:var(--ink); font-style:italic; line-height:1.5; }
+  .laalu-name { font-family:'Bebas Neue',sans-serif; font-size:0.85rem; color:var(--red); margin-top:0.3rem; }
+
+  .results-title { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:0.05em; margin-bottom:0.5rem; }
+
+  .movie { background:#fff; border:3px solid var(--ink); border-top:none; position:relative; }
+  .movie:first-of-type { border-top:3px solid var(--ink); }
+
+  .movie-rank {
+    position:absolute; top:0; left:0; bottom:0; width:36px;
+    background:var(--ink); display:flex; align-items:center; justify-content:center;
+    font-family:'Bebas Neue',sans-serif; font-size:1.4rem; color:var(--yellow);
+  }
+
+  .movie-body { margin-left:36px; padding:0.7rem 0.8rem; }
+  .movie-title { font-family:'Bebas Neue',sans-serif; font-size:1.2rem; letter-spacing:0.03em; line-height:1; }
+  .movie-year { font-family:'Space Mono',monospace; font-size:0.6rem; color:#999; margin-left:0.5rem; }
+  .taste { display:inline-block; font-family:'Space Mono',monospace; font-size:0.5rem; letter-spacing:0.1em; text-transform:uppercase; padding:0.15rem 0.4rem; margin:0.3rem 0; background:var(--ink); color:var(--yellow); }
+  .movie-desc { font-size:0.75rem; color:#444; line-height:1.5; margin:0.3rem 0; }
+
+  .meters { display:flex; gap:0.4rem; margin-top:0.4rem; }
+  .meter { flex:1; background:var(--cream); border:1.5px solid var(--ink); padding:0.3rem 0.4rem; }
+  .meter-lbl { font-family:'Space Mono',monospace; font-size:0.45rem; color:#888; letter-spacing:0.1em; text-transform:uppercase; }
+  .meter-val { font-family:'Bebas Neue',sans-serif; font-size:1rem; color:var(--ink); line-height:1; }
+  .meter-track { background:#ddd; height:2px; margin-top:0.2rem; }
+  .meter-fill { height:100%; transition:width 1s ease; }
+
+  .verdict { background:var(--ink); padding:0.3rem 0.5rem 0.3rem 40px; font-family:'Space Mono',monospace; font-size:0.55rem; color:var(--yellow); letter-spacing:0.08em; border-top:1px solid var(--ink); }
+
+  .footer { border-top:3px solid var(--ink); background:var(--ink); padding:0.5rem 1rem; }
+  .footer p { font-family:'Space Mono',monospace; font-size:0.5rem; color:#555; letter-spacing:0.1em; }
+
+  @keyframes flicker { 0%,100%{opacity:1} 50%{opacity:0.6} }
+  @keyframes pulse   { 0%,100%{opacity:1} 50%{opacity:0.4} }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="tape"></div>
+  <div class="header-inner">
+    <span class="logo">LAALUYADAV</span>
+    <span class="badge">🧔 MOVIE ORACLE</span>
+  </div>
+</div>
+
+<div class="body">
+
+  <div class="field">
+    <label>Mood / Genre / Vibe</label>
+    <input type="text" id="query" placeholder="revenge thriller, feel-good Bollywood..." />
+  </div>
+  <div class="field">
+    <label>Era</label>
+    <select id="era">
+      <option value="all">All Time</option>
+      <option value="modern">Modern (2010+)</option>
+      <option value="classic">Classic (pre-2000)</option>
+      <option value="recent">Recent (2020+)</option>
+    </select>
+  </div>
+  <button class="btn" id="btn" onclick="search()">ASK LAALU ↗</button>
+
+  <div style="height:0.8rem"></div>
+
+  <div class="loading" id="loading">
+    <div class="load-title">CONSULTING ORACLE...</div>
+    <div class="load-msg" id="loadMsg">LAALU IS THINKING VERY HARD...</div>
+    <div class="progress-wrap"><div class="progress-bar" id="progress"></div></div>
+  </div>
+
+  <div class="error" id="error"><p id="errorMsg"></p></div>
+
+  <div class="laalu" id="laalu">
+    <p class="laalu-text" id="laalu-text"></p>
+    <span class="laalu-name">— LAALUYADAV</span>
+  </div>
+
+  <div id="results"></div>
+
+</div>
+
+<div class="footer">
+  <p>IMDB · POPCORNMETER · COMMUNITY SCORE</p>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
