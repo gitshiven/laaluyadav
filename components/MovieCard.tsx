@@ -150,8 +150,11 @@ export function MovieCard({ result, rank }: { result: Result; rank: number }) {
         <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
           <div style={{ display: 'flex', gap: '0.4rem', flex: '1 1 280px', flexWrap: 'wrap' }}>
             <MiniMeter label="IMDB"           value={result.imdb || 'N/A'}                                pct={imdbPct}      color="#F5C518" />
-            <MiniMeter label="🍿 Audience"    value={result.rtAudience ? `${result.rtAudience}%` : 'N/A'} pct={rtPct}        color="#E8001D" />
-            <MiniMeter label="TMDB"           value={result.tmdbScore  ? `${result.tmdbScore}/10` : 'N/A'} pct={tmdbPct}     color="#01B4E4" />
+            {result.rtAudience && result.rtAudience !== 'N/A' ? (
+              <MiniMeter label="🍅 RT" value={`${result.rtAudience}%`} pct={rtPct} color="#E8001D" />
+            ) : result.tmdbScore && result.tmdbScore !== 'N/A' ? (
+              <MiniMeter label="🍿 TMDB Audience" value={`${result.tmdbScore}/10`} pct={(parseFloat(result.tmdbScore) / 10) * 100} color="#01B4E4" />
+            ) : null}
             <MiniMeter label="Community"      value={`${result.communityScore?.toFixed(1)}/10`}            pct={communityPct} color="#0D0D0D" />
             <MiniMeter label="⚡ Final Score" value={`${result.finalScore?.toFixed(1)}/10`}                pct={finalPct}     color="#FFE600" />
           </div>

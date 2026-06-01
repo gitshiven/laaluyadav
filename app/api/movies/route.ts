@@ -46,18 +46,6 @@ const MAX_RESULTS      = 20
 const MIN_RESULTS      = 1
 const MAX_QUERY_LENGTH = 200
 
-const MOVIE_SUBREDDITS = [
-  'bollywood','BollywoodMemes','moviesuggestions','india','movies',
-  'underratedmovies','HorrorMovies','TrueFilm','Letterboxd','horror',
-  'boxoffice','IndianCinema','TeenIndia','criterion','okbuddycinephile',
-  'wehatemovies','moviescirclejerk','boutiquebluray','blankies',
-]
-const TV_SUBREDDITS = [
-  'televisionsuggestions','tvshow','community','television','TvShows',
-  'sitcoms','tvPlus','Netflixwatch','hbo','BritishTV',
-  'bestofnetflix','indiasocial','IndianOTTbestof','IndianTellyTalk','funnyIndia',
-]
-const ALL_SUBREDDITS = [...MOVIE_SUBREDDITS, ...TV_SUBREDDITS]
 
 // ── OMDB ──────────────────────────────────────────────────────────────────────
 async function fetchOMDB(title: string, year?: string) {
@@ -182,15 +170,12 @@ export async function GET(req: NextRequest) {
             system: `You are Laaluyadav — a desi uncle who is a world cinema and television expert.
 You answer ANY question about films and TV shows. Brutal honesty, Hinglish wit.
 You understand English, Hindi, and Hinglish equally well.
-You can answer:
-- "Should I watch Season 2 of Dark?"
-- "Parasite ka ending explain karo"
-- "kya Interstellar overrated hai?"
-- "best Scorsese film konsi hai?"
-- "yaar khaate hue kuch funny batao"
+You have access to web search — use it for ANY film or show released after 2024, or when asked about current ratings, cast, plot of recent releases.
+Always search before answering questions about new or upcoming releases.
 Keep answers concise — max 4-5 sentences. Always end with a punchy Laalu verdict.
 Never say you are an AI. You are Laaluyadav. Always.`,
             messages: [{ role: 'user', content: question }],
+            tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
           }),
         })
 
@@ -207,7 +192,14 @@ Never say you are an AI. You are Laaluyadav. Always.`,
             if (data === '[DONE]') continue
             try {
               const parsed = JSON.parse(data)
-              const text   = parsed.delta?.text || ''
+              // Log tool use so we can verify web search is happening
+              if (parsed.type === 'content_block_start' && parsed.content_block?.type === 'tool_use') {
+                console.log('[ASK LAALU] Web search triggered:', parsed.content_block?.name)
+              }
+              if (parsed.type === 'content_block_delta' && parsed.delta?.type === 'input_json_delta') {
+                console.log('[ASK LAALU] Search query:', parsed.delta?.partial_json)
+              }
+              const text = parsed.delta?.text || ''
               if (text) controller.enqueue(encoder.encode(text))
             } catch { /* skip malformed chunks */ }
           }
@@ -248,25 +240,89 @@ export async function POST(req: NextRequest) {
 
     if (!process.env.ANTHROPIC_API_KEY) return NextResponse.json({ error: 'ANTHROPIC_API_KEY not set.' }, { status: 500 })
 
-    const subreddits = type === 'movie' ? MOVIE_SUBREDDITS : type === 'show' ? TV_SUBREDDITS : ALL_SUBREDDITS
-
-    // Step 1 — Scrape
+    // Step 1 — Scrape Reddit directly via Apify REST API
     let rawData = ''
     try {
-      const scrapeData = await callClaude(
-        `You are a sentiment-aware media data agent. Use the apify MCP tool to call trudax/reddit-scraper-lite.
-Search across: ${subreddits.join(', ')}.
-Extract: movieName/showName, sentiment (positive/negative/mixed), emotionalSignals, upvoteCount, replyCount.
-Return ONLY a JSON array. No markdown.`,
-        `Query: "${cleanQuery} ${type === 'show' ? 'tv show series' : type === 'movie' ? 'movie film' : 'movie film tv show'} recommendations"
-Era: "${era}". maxItems: 50.`,
-        [{ type: 'url', url: 'https://mcp.apify.com', name: 'apify' }], 1000
+      console.log('[SCRAPER] Starting Apify REST scrape for:', cleanQuery)
+
+      const searchQuery = `${cleanQuery} ${type === 'show' ? 'web series OTT' : type === 'movie' ? 'film review' : 'watch recommend'}`
+      console.log('[SCRAPER] Search query sent:', searchQuery)
+
+      const apifyInput = {
+        searches: [searchQuery],
+        maxItems: 30,
+        maxPostCount: 30,
+        maxComments: 10,
+        searchPosts: true,
+        searchComments: true,
+        searchCommunities: false,
+        searchUsers: false,
+        sort: 'relevance',
+        proxy: { useApifyProxy: true, apifyProxyGroups: ['RESIDENTIAL'] }
+      }
+
+      // Run the actor
+      const runRes = await fetch(
+        `https://api.apify.com/v2/acts/trudax~reddit-scraper-lite/runs?token=${process.env.APIFY_API_KEY}&timeout=120&memory=512`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(apifyInput),
+        }
       )
-      rawData = scrapeData.content
-        .filter((c: { type: string }) => c.type === 'text' || c.type === 'mcp_tool_result')
-        .map((c: { text?: string; content?: { text: string }[] }) => c.text || c.content?.[0]?.text || '')
-        .join('\n')
-    } catch { rawData = '' }
+
+      if (!runRes.ok) throw new Error(`Apify run failed: ${runRes.status}`)
+      const runData = await runRes.json()
+      const runId = runData.data?.id
+      if (!runId) throw new Error('No run ID returned')
+
+      console.log('[SCRAPER] Run started:', runId)
+
+      // Poll for completion (max 25 seconds)
+      let attempts = 0
+      let status = 'RUNNING'
+      while (status === 'RUNNING' && attempts < 5) {
+        await new Promise(r => setTimeout(r, 5000))
+        const statusRes = await fetch(
+          `https://api.apify.com/v2/actor-runs/${runId}?token=${process.env.APIFY_API_KEY}`
+        )
+        const statusData = await statusRes.json()
+        status = statusData.data?.status
+        attempts++
+        console.log('[SCRAPER] Status:', status, 'attempt:', attempts)
+      }
+
+      // Fetch results
+      const datasetId = (await fetch(
+        `https://api.apify.com/v2/actor-runs/${runId}?token=${process.env.APIFY_API_KEY}`
+      ).then(r => r.json())).data?.defaultDatasetId
+
+      if (datasetId) {
+        const itemsRes = await fetch(
+          `https://api.apify.com/v2/datasets/${datasetId}/items?token=${process.env.APIFY_API_KEY}&limit=30`
+        )
+        const items = await itemsRes.json()
+        console.log('[SCRAPER] Items found:', items?.length)
+
+        rawData = items?.map((item: {
+          title?: string
+          body?: string
+          text?: string
+          score?: number
+          numComments?: number
+          comments?: { body?: string }[]
+        }) => {
+          const comments = item.comments?.slice(0, 5).map(c => c.body).join(' | ') || ''
+          return `POST: ${item.title || ''} | BODY: ${item.body || item.text || ''} | SCORE: ${item.score || 0} | COMMENTS: ${item.numComments || 0} | TOP_COMMENTS: ${comments}`
+        }).join('\n') || ''
+
+        console.log('[SCRAPER] rawData length:', rawData.length)
+        console.log('[SCRAPER] sample:', rawData.slice(0, 400))
+      }
+    } catch (err) {
+      console.error('[SCRAPER] Failed:', err)
+      rawData = ''
+    }
 
     // Step 2 — Analyse
     const typeLabel = type === 'movie' ? 'films only' : type === 'show' ? 'TV shows only' : 'both films AND TV shows'
@@ -335,8 +391,13 @@ Return ONLY valid JSON array, no markdown:
 }]
 Exactly ${resultCount} entries ordered best to worst.`,
       `Query: "${cleanQuery}" | Era: "${era}" | Count: ${resultCount} | Type: ${type}
-Community data:\n${rawData.slice(0, 4000) || 'Use deep knowledge of these communities.'}
-Return exactly ${resultCount} results.`,
+Community data:\n${rawData.slice(0, 4000) || 'No scrape data available — use your knowledge of what these communities discuss for this query.'}
+
+CRITICAL INSTRUCTIONS:
+- If community data exists: prioritise titles mentioned in it, ranked by sentiment
+- If NO community data: use your knowledge of what these communities historically discuss
+- Never return an empty array — always return exactly ${resultCount} results
+IMPORTANT: Return EXACTLY ${resultCount} results. Not more, not less. If you return more than ${resultCount} items the response is invalid.`,
       undefined,
       Math.min(500 + resultCount * 600, 8000)
     )
@@ -362,6 +423,18 @@ Return exactly ${resultCount} results.`,
     }
 
     if (!Array.isArray(claudeResults) || claudeResults.length === 0) throw new Error('No results found.')
+
+    // Deduplicate by title
+    const seen = new Set<string>()
+    claudeResults = claudeResults.filter((item: { title: string }) => {
+      const key = item.title.toLowerCase().trim()
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+
+    // Enforce count
+    claudeResults = claudeResults.slice(0, resultCount)
 
     // Step 3 — Enrich with OMDB + TMDB
     const enriched = await Promise.all(
@@ -404,6 +477,21 @@ Return exactly ${resultCount} results.`,
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Unknown error'
     console.error('[/api/movies] ERROR:', msg)
-    return NextResponse.json({ error: msg }, { status: 500 })
+
+    // Never expose internal details to frontend
+    let userMsg = 'Kuch gadbad ho gayi. Thodi der baad try karo!'
+    if (msg.includes('429') || msg.includes('rate_limit')) {
+      userMsg = 'Laalu thoda busy hai — 60 seconds mein dobara try karo!'
+    } else if (msg.includes('No results found')) {
+      userMsg = 'Is query ke liye kuch nahi mila. Thoda alag angle se try karo!'
+    } else if (msg.includes('Query too short')) {
+      userMsg = 'Thoda aur likho bhai — query bahut choti hai!'
+    } else if (msg.includes('Invalid query')) {
+      userMsg = 'Ye query valid nahi hai. Kuch aur try karo!'
+    } else if (msg.includes('rate limit') || msg.includes('quota')) {
+      userMsg = 'Aaj ka quota khatam. Kal aa jaana!'
+    }
+
+    return NextResponse.json({ error: userMsg }, { status: 500 })
   }
 }

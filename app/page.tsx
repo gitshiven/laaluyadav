@@ -83,6 +83,7 @@ export default function Home() {
     }, 2000)
 
     try {
+      console.log('[SEARCH] count:', c, 'tab:', t, 'era:', e)
       const res  = await fetch('/api/movies', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -113,7 +114,19 @@ export default function Home() {
     } catch (e: unknown) {
       clearInterval(msgRef.current!)
       clearInterval(progressRef.current!)
-      setError(e instanceof Error ? e.message : 'Something broke. Dobara try karo!')
+      const msg = e instanceof Error ? e.message : ''
+
+      if (msg.includes('429') || msg.includes('rate_limit')) {
+        setError('Laalu thoda busy hai abhi — 60 seconds mein dobara try karo! ⏱️')
+      } else if (msg.includes('500') || msg.includes('Internal')) {
+        setError('Kuch gadbad ho gayi. Thodi der baad try karo!')
+      } else if (msg.includes('timeout') || msg.includes('TIMEOUT')) {
+        setError('Laalu time out ho gaya — query thodi simple rakho aur dobara try karo!')
+      } else if (msg.includes('parse') || msg.includes('JSON')) {
+        setError('Laalu confuse ho gaya — query thodi alag karke try karo!')
+      } else {
+        setError('Kuch toh gadbad hai, par Laalu haar nahi maanta. Dobara try karo!')
+      }
     } finally {
       setLoading(false)
     }
