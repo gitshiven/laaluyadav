@@ -38,7 +38,7 @@ setInterval(() => {
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 export const runtime   = 'nodejs'
-export const maxDuration = 60
+export const maxDuration = 300
 
 const ANTHROPIC_API    = 'https://api.anthropic.com/v1/messages'
 const MODEL            = 'claude-sonnet-4-6'
@@ -282,7 +282,7 @@ export async function POST(req: NextRequest) {
 
       // Run the actor
       const runRes = await fetch(
-        `https://api.apify.com/v2/acts/trudax~reddit-scraper-lite/runs?token=${process.env.APIFY_API_KEY}&timeout=120&memory=512`,
+        `https://api.apify.com/v2/acts/trudax~reddit-scraper-lite/runs?token=${process.env.APIFY_API_KEY}&timeout=45&memory=256`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -297,11 +297,17 @@ export async function POST(req: NextRequest) {
 
       console.log('[SCRAPER] Run started:', runId)
 
-      // Poll for completion (max 25 seconds)
+      // Poll for completion — bail after 40s to leave time for Claude analysis
       let attempts = 0
       let status = 'RUNNING'
-      while (status === 'RUNNING' && attempts < 5) {
-        await new Promise(r => setTimeout(r, 5000))
+      const scrapeStart = Date.now()
+      while (status === 'RUNNING' && attempts < 8) {
+        await new Promise(r => setTimeout(r, 3000))
+        // Bail out after 40 seconds to leave time for Claude analysis
+        if (Date.now() - scrapeStart > 40000) {
+          console.log('[SCRAPER] Timeout — skipping, using knowledge fallback')
+          break
+        }
         const statusRes = await fetch(
           `https://api.apify.com/v2/actor-runs/${runId}?token=${process.env.APIFY_API_KEY}`
         )
