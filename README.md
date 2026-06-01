@@ -13,10 +13,10 @@ Laaluyadav is a movie and TV show recommendation engine that goes beyond IMDB sc
 ## Screenshots
 
 ### Search Interface
-![Search Interface](docs/search.png)
+![Search Interface](D:\laaluyadav-project\laaluyadav\docs\search.png)
 
 ### Ask Laalu Chat
-![Ask Laalu](docs/chat.png)
+![Ask Laalu](D:\laaluyadav-project\laaluyadav\docs\chat.png)
 
 ---
 
