@@ -87,10 +87,10 @@ async function search() {
     document.getElementById('laalu-text').textContent = LAALU_LINES[Math.floor(Math.random() * LAALU_LINES.length)]
     laalu.classList.add('visible')
 
-    renderMovies(data.movies)
+    renderMovies(data.results)
 
     // Cache last result
-    chrome.storage.local.set({ lastResult: { movies: data.movies, query, era, ts: Date.now() } })
+    chrome.storage.local.set({ lastResult: { results: data.results, query, era, ts: Date.now() } })
 
   } catch (e) {
     clearInterval(msgInterval)
@@ -103,19 +103,18 @@ async function search() {
   }
 }
 
-function renderMovies(movies) {
+function renderMovies(results) {
   const container = document.getElementById('results')
-  container.innerHTML = '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.4rem;letter-spacing:0.05em;margin-bottom:0.5rem;">TOP 5 PICKS</div>'
+  container.innerHTML = '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.4rem;letter-spacing:0.05em;margin-bottom:0.5rem;">TOP PICKS</div>'
 
-  movies.forEach((m, i) => {
+  results.forEach((m, i) => {
     const imdbPct      = ((parseFloat(m.imdb) || 0) / 10 * 100).toFixed(0)
-    const popcornPct   = parseFloat(m.popcorn) || 0
+    const popcornPct   = parseFloat(m.rtAudience || '0')
     const communityPct = Math.min(100, (m.communityScore / 10) * 100).toFixed(0)
     const tasteStyle   = TASTE_STYLES[m.taste] || 'background:#888;color:#fff'
 
     const card = document.createElement('div')
     card.className = 'movie'
-    card.style.animationDelay = (i * 0.1) + 's'
     card.innerHTML = `
       <div class="movie-rank">${i + 1}</div>
       <div class="movie-body">
@@ -124,18 +123,19 @@ function renderMovies(movies) {
           ${m.year ? `<span class="movie-year">${m.year}</span>` : ''}
         </div>
         <span class="taste" style="${tasteStyle}">${m.taste || 'World Cinema'}</span>
+        ${m.whyThisQuery ? `<p style="font-family:'Space Mono',monospace;font-size:0.58rem;color:#E8001D;font-style:italic;margin:0.3rem 0;line-height:1.4;">"${m.whyThisQuery}"</p>` : ''}
         <p class="movie-desc">${m.description}</p>
         <div class="meters">
-          ${meterHTML('IMDB', m.imdb || 'N/A', imdbPct, '#F5C518')}
-          ${meterHTML('🍿 POPCORN', (m.popcorn || 'N/A') + '%', popcornPct, '#E8001D')}
-          ${meterHTML('COMMUNITY', m.communityScore.toFixed(1) + '/10', communityPct, '#0D0D0D')}
+          ${m.imdb && m.imdb !== 'N/A' ? meterHTML('IMDB', m.imdb, imdbPct, '#F5C518') : ''}
+          ${m.rtAudience ? meterHTML('🍿 RT', m.rtAudience + '%', popcornPct, '#E8001D') : ''}
+          ${meterHTML('Community', m.communityScore?.toFixed(1) + '/10', communityPct, '#0D0D0D')}
+          ${m.finalScore ? meterHTML('⚡ Final', m.finalScore?.toFixed(1) + '/10', (m.finalScore/10)*100, '#FFE600') : ''}
         </div>
       </div>
       <div class="verdict">💬 ${m.verdict}</div>
     `
     container.appendChild(card)
 
-    // Animate bars after DOM insert
     setTimeout(() => {
       card.querySelectorAll('.meter-fill[data-w]').forEach(bar => {
         bar.style.width = bar.getAttribute('data-w') + '%'
@@ -169,7 +169,7 @@ chrome.storage.local.get('lastResult', ({ lastResult }) => {
     const laalu = document.getElementById('laalu')
     document.getElementById('laalu-text').textContent = LAALU_LINES[0]
     laalu.classList.add('visible')
-    renderMovies(lastResult.movies)
+    renderMovies(lastResult.results)
   }
 })
 
