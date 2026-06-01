@@ -1,6 +1,6 @@
 # 🧔 Laaluyadav — UNEMPLOYABLE UNC   
 
-Desi uncle certified movie & TV recommendations. Community sentiment. No filmy nonsense.
+OPEN SOURCE, Desi uncle certified movie & TV recommendations. Community sentiment. No filmy nonsense.
 
 ---
 
