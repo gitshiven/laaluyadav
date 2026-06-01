@@ -1,13 +1,8 @@
-Looking great! The logo is rendering perfectly in the header. Now update the README:
-
-**Open `README.md` → Ctrl+A → paste:**
-
-```markdown
 # 🧔 Laaluyadav — The Movie Oracle
 
 > *"Seedha baat, no bakwaas."*
 
-Desi uncle certified movie & TV recommendations. Community sentiment + IMDB + RT Audience + TMDB. No filmy nonsense.
+Desi uncle certified movie & TV recommendations. Community sentiment. No filmy nonsense.
 
 ---
 
@@ -18,7 +13,6 @@ Laaluyadav is a movie and TV show recommendation engine that goes beyond IMDB sc
 ---
 
 ## Screenshots
-
 
 ### Search Interface
 ![Search Interface](https://raw.githubusercontent.com/gitshiven/laaluyadav/main/docs/search.png)
@@ -47,20 +41,16 @@ Laaluyadav is a movie and TV show recommendation engine that goes beyond IMDB sc
 
 ## Scoring System
 
-```
-Final Score =
-  Community Sentiment  (audience discussions)  × 35%
-  IMDB Rating          (via OMDB API)           × 25%
-  RT Audience Score    (via OMDB API)           × 25%
-  Rewatch Index        (discussion signals)     × 15%
-```
+**Final Score:**
+- Community Sentiment (audience discussions) × 35%
+- IMDB Rating (via OMDB API) × 25%
+- RT Audience Score (via OMDB API) × 25%
+- Rewatch Index (discussion signals) × 15%
 
-Community score formula:
-```
-Base    = (positive mentions × 2.0) + (neutral × 0.5) - (negative × 1.5)
-Boost   = upvotes > 500 → +1.0 | comment thread > 50 → +0.5
-Penalty = "overrated"/"disappointed"/"fell asleep" → -1.5 each
-```
+**Community score formula:**
+- Base = (positive mentions × 2.0) + (neutral × 0.5) - (negative × 1.5)
+- Boost = upvotes > 500 → +1.0 | comment thread > 50 → +0.5
+- Penalty = "overrated"/"disappointed"/"fell asleep" → -1.5 each
 
 ---
 
@@ -90,9 +80,9 @@ Penalty = "overrated"/"disappointed"/"fell asleep" → -1.5 each
 |---|---|
 | Frontend | Next.js 14 (App Router) + TypeScript |
 | Styling | Inline styles + CSS animations |
-| API | Next.js Edge/Node Route |
+| API | Next.js Node Route |
 | AI | Claude Sonnet via Anthropic API |
-| Scraping | Apify `trudax/reddit-scraper-lite` via MCP |
+| Scraping | Apify trudax/reddit-scraper-lite via MCP |
 | Movie data | OMDB API (IMDB + RT scores) + TMDB API (posters) |
 | Deploy | Vercel |
 | Extension | Chrome Manifest V3 |
@@ -103,26 +93,20 @@ Penalty = "overrated"/"disappointed"/"fell asleep" → -1.5 each
 
 ### 1. Clone and install
 
-```bash
-git clone https://github.com/gitshiven/laaluyadav.git
-cd laaluyadav
-npm install
-```
+    git clone https://github.com/gitshiven/laaluyadav.git
+    cd laaluyadav
+    npm install
 
 ### 2. Set up environment variables
 
-```bash
-cp .env.example .env.local
-```
+    cp .env.example .env.local
 
 Edit `.env.local`:
 
-```
-ANTHROPIC_API_KEY=sk-ant-...
-APIFY_API_KEY=apify_api_...
-OMDB_API_KEY=your_8char_key
-TMDB_API_KEY=eyJhbGci...bearer_token
-```
+    ANTHROPIC_API_KEY=sk-ant-...
+    APIFY_API_KEY=apify_api_...
+    OMDB_API_KEY=your_8char_key
+    TMDB_API_KEY=eyJhbGci...bearer_token
 
 Get your keys:
 - Anthropic: https://console.anthropic.com/keys
@@ -132,9 +116,7 @@ Get your keys:
 
 ### 3. Run dev server
 
-```bash
-npm run dev
-```
+    npm run dev
 
 Open http://localhost:3000
 
@@ -142,38 +124,20 @@ Open http://localhost:3000
 
 ## Deploy to Vercel
 
-### 1. Push to GitHub
-
-```bash
-git add .
-git commit -m "initial commit"
-git push
-```
-
-### 2. Import on Vercel
-
 1. Go to https://vercel.com/new
 2. Import your GitHub repo
-3. Framework: **Next.js** (auto-detected)
-4. Add Environment Variables — all 4 keys
-5. Click **Deploy**
+3. Framework: Next.js (auto-detected)
+4. Add all 4 environment variables
+5. Click Deploy
 
 ---
 
 ## Chrome Extension
 
-The extension calls your deployed Vercel API.
-
-### Setup
-
-1. In `extension/popup.js` line 3, update:
-```js
-const API_URL = 'https://your-app.vercel.app/api/movies'
-```
-
-2. Open Chrome → `chrome://extensions/`
-3. Enable **Developer mode**
-4. Click **Load unpacked** → select `extension/` folder
+1. In `extension/popup.js` line 3, update the API_URL to your Vercel URL
+2. Open Chrome → chrome://extensions/
+3. Enable Developer mode
+4. Click Load unpacked → select the extension/ folder
 
 ---
 
@@ -188,30 +152,28 @@ const API_URL = 'https://your-app.vercel.app/api/movies'
 
 ## Project Structure
 
-```
-laaluyadav/
-├── app/
-│   ├── api/movies/route.ts   ← Server-side API (all keys here)
-│   ├── globals.css
-│   ├── layout.tsx
-│   └── page.tsx              ← Main UI
-├── components/
-│   ├── Logo.tsx              ← SVG stamp logo
-│   └── MovieCard.tsx         ← Result card
-├── extension/
-│   ├── manifest.json
-│   ├── popup.html
-│   ├── popup.js
-│   └── icons/
-├── lib/
-│   ├── types.ts
-│   └── utils.ts
-├── public/
-│   ├── favicon.svg
-│   ├── manifest.json
-│   └── icons/
-└── .env.example
-```
+    laaluyadav/
+    ├── app/
+    │   ├── api/movies/route.ts
+    │   ├── globals.css
+    │   ├── layout.tsx
+    │   └── page.tsx
+    ├── components/
+    │   ├── Logo.tsx
+    │   └── MovieCard.tsx
+    ├── extension/
+    │   ├── manifest.json
+    │   ├── popup.html
+    │   ├── popup.js
+    │   └── icons/
+    ├── lib/
+    │   ├── types.ts
+    │   └── utils.ts
+    ├── public/
+    │   ├── favicon.svg
+    │   ├── manifest.json
+    │   └── icons/
+    └── .env.example
 
 ---
 
@@ -227,24 +189,3 @@ laaluyadav/
 ---
 
 Built by Shiven · Dublin 🇮🇪 · [github.com/gitshiven](https://github.com/gitshiven)
-```
-
-Then add the screenshots — in VS Code terminal:
-
-```cmd
-mkdir D:\laaluyadav\docs
-```
-
-Take screenshots of your app and save them as:
-- `D:\laaluyadav\docs\search.png`
-- `D:\laaluyadav\docs\chat.png`
-
-You can use the two screenshots you just shared — save them with those names into the `docs/` folder.
-
-Then push:
-
-```cmd
-git add .
-git commit -m "docs: README with screenshots and full feature list"
-git push
-```
