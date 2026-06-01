@@ -172,3 +172,5 @@ chrome.storage.local.get('lastResult', ({ lastResult }) => {
     renderMovies(lastResult.movies)
   }
 })
+
+document.getElementById('btn').addEventListener('click', search)
