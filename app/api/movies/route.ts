@@ -10,7 +10,7 @@ const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
 const dailyMap     = new Map<string, { count: number; resetAt: number }>()
 const RATE_LIMIT   = { windowMs: 60 * 1000, maxReqs: 5, maxDaily: 20 }
 
-export function checkRateLimit(ip: string): { allowed: boolean; message: string } {
+function checkRateLimit(ip: string): { allowed: boolean; message: string } {
   const now = Date.now()
   const minute = rateLimitMap.get(ip)
   if (!minute || now > minute.resetAt) {
