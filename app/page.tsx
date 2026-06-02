@@ -78,10 +78,19 @@ export default function Home() {
     if (msgRef.current)      clearInterval(msgRef.current)
     if (progressRef.current) clearInterval(progressRef.current)
 
+    const STEP_MSGS = [
+      'LAALU REDDIT PE JA RAHA HAI...',
+      'COMMUNITY SENTIMENT PADH RAHA HAI...',
+      'HYPE AUR TRUTH ALAG KAR RAHA HAI...',
+      'IMDB AUR RT CHECK HO RAHA HAI...',
+      'LAALU RANK KAR RAHA HAI...',
+      'ALMOST DONE — LAALU FUSSY HAI...',
+    ]
+    let stepIdx = 0
     msgRef.current = setInterval(() => {
-      msgIdx = (msgIdx + 1) % LOADING_MSGS.length
-      setLoadingMsg(LOADING_MSGS[msgIdx])
-    }, 2000)
+      stepIdx = (stepIdx + 1) % STEP_MSGS.length
+      setLoadingMsg(STEP_MSGS[stepIdx])
+    }, 3000)
 
     const steps = [10, 25, 45, 65, 82, 92]
     let si = 0
